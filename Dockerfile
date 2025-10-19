@@ -1,4 +1,4 @@
-FROM ghcr.io/sagemath/sage-binder-env
+FROM ghcr.io/sagemath/sage-binder-env:10.7
 
 # Copia el repo y fija permisos para el usuario jovyan
 COPY --chown=jovyan:jovyan . /home/jovyan/
