@@ -1,14 +1,10 @@
 #!/bin/bash
 set -e
 
-# Base URL que Binder inyecta; esencial para que el proxy encuentre al server
 BASE_URL="${JUPYTERHUB_SERVICE_PREFIX:-/}"
-
-# Limitar hilos de Sage en máquinas chicas
 export SAGE_NUM_THREADS="${SAGE_NUM_THREADS:-2}"
 
-# Arranque del servidor Jupyter moderno (Notebook 7 usa jupyter-server por debajo)
-# Usamos sólo flags de ServerApp (no mezclamos NotebookApp/LabApp)
+# Arranque moderno y robusto (Notebook 7 usa jupyter-server por debajo)
 exec jupyter server \
   --ServerApp.ip=0.0.0.0 \
   --ServerApp.port="${PORT:-8888}" \
