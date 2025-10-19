@@ -1,11 +1,14 @@
 FROM ghcr.io/sagemath/sage-binder-env:10.7
 
-# Copia el repo (todo) al home del usuario jovyan con permisos correctos
+# Copia tu repo al HOME del usuario de Binder (jovyan) con permisos correctos
 COPY --chown=jovyan:jovyan . /home/jovyan/
 WORKDIR /home/jovyan/
 
-# Si tienes un script start, déjalo ejecutable (si no existe, no falla)
+# Asegura que 'start' sea ejecutable si existe
 RUN chmod +x /home/jovyan/start || true
 
-# Log útil en build
-RUN echo "Loaded ParabolicArrangements with SageMath Binder base (10.7)"
+# Usa tini como entrypoint (estándar de Jupyter)
+ENTRYPOINT ["tini", "-g", "--"]
+
+# Lanza tu script de arranque (ver siguiente paso)
+CMD ["/home/jovyan/start"]
