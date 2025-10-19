@@ -1,7 +1,7 @@
 # Parabolic DGA for Real Parabolic Arrangements
 
 [![Launch in Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/joseleonm/ParabolicArrangements/HEAD)
-[![Open demo notebook](https://img.shields.io/badge/launch-demo%20notebook-blue?logo=jupyter)](https://mybinder.org/v2/gh/joseleonm/ParabolicArrangements/HEAD?labpath=notebooks%2Fdemo_parabolic_dga.ipynb)
+[![Open demo notebook](https://img.shields.io/badge/launch-demo%20notebook-blue?logo=jupyter)](https://mybinder.org/v2/gh/joseleonm/ParabolicArrangements/HEAD?labpath=demo_parabolic_dga.ipynb)
 
 Self-contained **SageMath 10.7** module implementing the relative parabolic chain complex,
 integer/GF(2) boundary operators, Betti number computation, and a minimal
