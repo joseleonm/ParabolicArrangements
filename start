@@ -4,7 +4,6 @@ set -e
 BASE_URL="${JUPYTERHUB_SERVICE_PREFIX:-/}"
 export SAGE_NUM_THREADS="${SAGE_NUM_THREADS:-2}"
 
-# Arranque moderno y robusto (Notebook 7 usa jupyter-server por debajo)
 exec jupyter server \
   --ServerApp.ip=0.0.0.0 \
   --ServerApp.port="${PORT:-8888}" \
