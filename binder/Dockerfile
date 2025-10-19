@@ -1,49 +1,32 @@
-# Dockerfile para Binder con SageMath + tu módulo parabolic_dga.sage
-
 FROM ghcr.io/sagemath/sage-binder-env:10.7
 
+# Crea usuario 'user' (como en el Dockerfile oficial del proyecto)
 USER root
-
-# Crear usuario (igual que en el Dockerfile oficial)
 ARG NB_USER=user
 ARG NB_UID=1000
-ENV NB_USER user
-ENV NB_UID 1000
-ENV HOME /home/${NB_USER}
+ENV NB_USER=${NB_USER}
+ENV NB_UID=${NB_UID}
+ENV HOME=/home/${NB_USER}
 RUN adduser --disabled-password --gecos "Default user" --uid ${NB_UID} ${NB_USER}
 
-# Copiar los notebooks al home
+# Copia notebooks (si tienes) y TU módulo .sage a una carpeta del home
 COPY notebooks/* ${HOME}/
+COPY parabolic_dga.sage ${HOME}/lib/parabolic_dga.sage
 
-# 🔹 Copiar también tu módulo .sage a la instalación del sistema Sage
-#   para que se pueda usar con `load("parabolic_dga.sage")` desde cualquier lugar
-COPY parabolic_dga.sage /sage/
+# *** Solo cambia dueño de lo que acabas de copiar ***
+RUN chown -R ${NB_USER}:${NB_USER} ${HOME}
 
-# 🔹 Opcional: si tienes más código fuente, puedes copiar todo un directorio:
-# COPY src/ /sage/src/
-
-# Asegurar permisos correctos
-RUN chown -R ${NB_USER}:${NB_USER} ${HOME} /sage/
-
-# Instalar kernel de Sage para Jupyter
+# Kernel de Sage para Jupyter
+USER ${NB_USER}
 RUN mkdir -p $(jupyter --data-dir)/kernels && \
     ln -s /sage/venv/share/jupyter/kernels/sagemath $(jupyter --data-dir)/kernels
 
-# Añadir Sage al PATH
-ENV PATH="/sage:$PATH"
+# Haz que Sage encuentre tu módulo sin rutas absolutas
+ENV SAGE_PATH=${HOME}/lib:${SAGE_PATH}
+ENV PATH="/sage:${PATH}"
 
-# Cambiar a usuario normal
-USER ${NB_USER}
-WORKDIR /home/${NB_USER}
+WORKDIR ${HOME}
 
-# Configurar Jupyter para silenciar warnings de nodejs
-RUN mkdir -p /home/${NB_USER}/.jupyter && \
-    echo "\
-import logging\n\
-\n\
-class NoNodeJSWarningFilter(logging.Filter):\n\
-    def filter(self, record):\n\
-        return 'Could not determine jupyterlab build status without nodejs' not in record.getMessage()\n\
-\n\
-logging.getLogger('LabApp').addFilter(NoNodeJSWarningFilter())\n\
-" > /home/${NB_USER}/.jupyter/jupyter_lab_config.py
+# Silenciar el warning de nodejs de JupyterLab (opcional)
+RUN mkdir -p ${HOME}/.jupyter && \
+    printf "import logging\n\nclass NoNodeJSWarningFilter(logging.Filter):\n    def filter(self, record):\n        return 'Could not determine jupyterlab build status without nodejs' not in record.getMessage()\n\nlogging.getLogger('LabApp').addFilter(NoNodeJSWarningFilter())\n" > ${HOME}/.jupyter/jupyter_lab_config.py
