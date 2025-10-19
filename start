@@ -1,11 +1,17 @@
 #!/bin/bash
 set -e
+
 BASE_URL="${JUPYTERHUB_SERVICE_PREFIX:-/}"
 export SAGE_NUM_THREADS="${SAGE_NUM_THREADS:-2}"
-sage -c 'print("Sage kernel pre-warmed")' || true
-exec jupyter lab \
-  --ServerApp.ip=0.0.0.0 \
-  --ServerApp.port="${PORT:-8888}" \
-  --ServerApp.open_browser=False \
-  --ServerApp.base_url="${BASE_URL}" \
+
+(sage -c 'print("Sage kernel pre-warmed")' || true) &
+
+exec jupyter notebook \
+  --NotebookApp.ip=0.0.0.0 \
+  --NotebookApp.port="${PORT:-8888}" \
+  --NotebookApp.open_browser=False \
+  --NotebookApp.base_url="${BASE_URL}" \
+  --NotebookApp.default_url="/tree" \
+  --NotebookApp.allow_origin="*" \
+  --NotebookApp.disable_check_xsrf=True \
   --ServerApp.root_dir="/home/jovyan"
