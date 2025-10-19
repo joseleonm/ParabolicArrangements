@@ -1,0 +1,11 @@
+#!/bin/bash
+set -e
+BASE_URL="${JUPYTERHUB_SERVICE_PREFIX:-/}"
+export SAGE_NUM_THREADS="${SAGE_NUM_THREADS:-2}"
+sage -c 'print("Sage kernel pre-warmed")' || true
+exec jupyter lab \
+  --ServerApp.ip=0.0.0.0 \
+  --ServerApp.port="${PORT:-8888}" \
+  --ServerApp.open_browser=False \
+  --ServerApp.base_url="${BASE_URL}" \
+  --ServerApp.root_dir="/home/jovyan"
