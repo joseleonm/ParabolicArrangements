@@ -6,7 +6,7 @@ WORKDIR /home/jovyan/
 
 # (NUEVO) Si existe binder/postBuild, dale permiso y ejecútalo en build
 # para “precocinar” Sage y acelerar el arranque.
-RUN if [ -f binder/postBuild ]; then chmod +x postBuild && /bin/bash postBuild; fi
+RUN if [ -f postBuild ]; then chmod +x postBuild && /bin/bash postBuild; fi
 
 # Asegura que el script de arranque sea ejecutable
 RUN chmod +x /home/jovyan/start
