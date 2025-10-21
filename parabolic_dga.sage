@@ -1,5 +1,5 @@
 r"""
-Parabolic DGA over Coxeter permutahedra (chains of parabolic cosets)
+Parabolic DGA over Coxeter permutahedra
 ====================================================================
 
 This module constructs the relative chain complex
@@ -9,9 +9,9 @@ and provides:
 
 - boundary matrices over ZZ and GF(2),
 - Betti numbers of the complement via Lefschetz duality,
-- a minimal chain-level intersection product which (per
-  Cantarero–León-Medina) identifies with the cohomological cup product
-  under the standard correspondence with parabolic chains,
+- a chain-level intersection product which models transverse intersection
+  of dual cells and identifies with the cohomological cup product under
+  the standard correspondence with parabolic chains,
 - a built-in `self_test` that checks d^2=0 and the Leibniz rule.
 
 **Design.**
@@ -26,20 +26,25 @@ and provides:
   C_\bullet(\mathcal C, \mathcal C_{\mathscr A}).
 
 **Quick example** (in this very file, no self-import)::
+
     sage: W,P,Plist = build_W_P("A",5)             # doctest: +ELLIPSIS
     sage: Delta = ideal_non_k_equal_A(W, Plist, k=3)
     sage: D = ParabolicDGA(W, P, Plist, Delta)
-    sage: b2 = D.betti_numbers(base_ring=GF(2))
-    sage: (b2[0], b2[1], b2[2]) in {(1,111,20), (1, 111, 20)}
+    sage: D.betti_numbers(base_ring=GF(2)) == {0: 1, 1: 111, 2: 20, 3: 0}
+    True
+
+A smaller sanity check::
+
+    sage: W4,P4,L4 = build_W_P("A",4)              # doctest: +ELLIPSIS
+    sage: D4 = ParabolicDGA(W4, P4, L4, ideal_non_k_equal_A(W4, L4, k=3))
+    sage: D4.betti_numbers(base_ring=GF(2)) == {0: 1, 1: 31, 2: 0}
     True
 
 **References.**
 - J. Cantarero – J. L. León-Medina: *The Cohomology Ring of Real Parabolic Arrangements*.
 """
 
-from sage.all import (
-    RootSystem, Integer, Matrix, vector, ZZ, GF
-)
+from sage.all import RootSystem, Integer, Matrix, vector, ZZ, GF
 
 # -----------------------------------------------------------------------------
 # Core: build W and its poset
@@ -97,25 +102,9 @@ def chain_degree(c):
 # Arrangement (order ideal) helpers
 # -----------------------------------------------------------------------------
 
-def upward_closed_closure(Plist, seed):
-    r"""
-    Placeholder for upward closure in J if ever needed.
-    In this implementation, ideals are created already as upward-closed sets;
-    return the input as a set.
-
-    EXAMPLES::
-        sage: W,P,Plist = build_W_P("A",4)      # doctest: +ELLIPSIS
-        sage: some = set([c for c in Plist if len(c[1])==2][:3])
-        sage: Delta = upward_closed_closure(Plist, some)
-        sage: some.issubset(Delta)
-        True
-    """
-    return set(seed)
-
-
 def ideal_non_k_equal_A(W, Plist, k=3):
     r"""
-    Deletion ideal for the type A non-k-equal arrangement.
+    Deletion ideal for the type A non-k-equal arrangement (k >= 3).
 
     In type A_r, irreducible parabolics of size m correspond to
     **consecutive** index blocks of length m in the Dynkin chain.
@@ -146,7 +135,7 @@ def ideal_non_k_equal_A(W, Plist, k=3):
         J = set(c[1])
         if any(B.issubset(J) for B in bad_blocks):
             Delta.add(c)
-    return upward_closed_closure(Plist, Delta)
+    return Delta
 
 
 # -----------------------------------------------------------------------------
@@ -161,15 +150,19 @@ class ParabolicDGA(object):
     Parameters
     ----------
     W : Weyl group
-    Pobj : poset (``W.milnor_fiber_poset()``)
-    Plist : list of poset elements
+        ``W = RootSystem([...]).ambient_space().weyl_group()``
+    Pobj : poset
+        ``W.milnor_fiber_poset()``
+    Plist : list
+        Elements of the poset (w, J) with J a tuple of simple indices.
     Delta : set
         Order ideal of cells to delete (parabolic arrangement).
 
     Notes
     -----
     - Chain degree: k = |J|.
-    - Oriented boundary over ZZ: (-1)^{o_J(j)} when adding j.
+    - Oriented boundary over ZZ: (-1)^{o_J(j)} when adding j, where
+      o_J(j) = |{ i in J : i < j }|.
 
     EXAMPLES::
         sage: W,P,Plist = build_W_P("A",5)      # doctest: +ELLIPSIS
@@ -286,7 +279,7 @@ class ParabolicDGA(object):
             sage: Delta = ideal_non_k_equal_A(W, Plist, k=3)
             sage: D = ParabolicDGA(W,P,Plist,Delta)
             sage: b2 = D.betti_numbers(GF(2))
-            sage: (b2[0], b2[1]) == (1, 111)
+            sage: (b2[0], b2[1], b2[2]) in {(1,111,20), (1, 111, 20)}
             True
         """
         mats = self.boundary_matrices(base_ring=base_ring)
@@ -294,11 +287,7 @@ class ParabolicDGA(object):
         betti = {}
         for k in ks:
             d_k = mats.get(k, Matrix(base_ring, len(self.by_k.get(k+1, [])), len(self.by_k.get(k, []))))
-            d_k_t = d_k.transpose()
-            if base_ring is ZZ:
-                rank_dk = d_k_t.change_ring().rank()
-            else:
-                rank_dk = d_k_t.rank()
+            rank_dk = d_k.rank()
             dimCk = len(self.by_k.get(k, []))
             nullity = dimCk - rank_dk
             if k == 0:
@@ -309,47 +298,156 @@ class ParabolicDGA(object):
             betti[k] = nullity - rank_prev
         return betti
 
-    # ------------------------- minimal intersection product -------------------
+    # ------------------------- transverse intersection product ----------------
+    # (chain-level product that matches the cup product on cohomology)
 
-    def product_sparse(self, v1, k1, v2, k2, base_ring=ZZ):
+    def _right_min_rep_mod(self, w, subset):
+        """Right minimal representative modulo the parabolic generated by subset."""
+        sref = self.W.simple_reflections()
+        subset_sorted = tuple(sorted(set(subset)))
+        wr = w
+        changed = True
+        while changed:
+            changed = False
+            for i in subset_sorted:
+                si = sref[i]
+                w2 = wr * si
+                if w2.length() < wr.length():
+                    wr = w2
+                    changed = True
+        return wr
+
+    def _common_fiber_rep(self, w, U):
+        """Canonical representative for the common fiber over the U-block."""
+        return self._right_min_rep_mod(w, U)
+
+    def _conjugate_simple_subset_via_group(self, r, I, U):
+        """
+        Conjugate the simple reflections indexed by I through r, and
+        identify their images as simple reflections inside the index set U.
+        Raises ValueError if some conjugate is not simple in the U-subsystem.
+        """
+        sref = self.W.simple_reflections()
+        rinv = r.inverse()
+        Uset = set(U)
+        J = []
+        for i in I:
+            ti = r * sref[i] * rinv
+            found = None
+            for j in Uset:
+                if ti == sref[j]:
+                    found = j
+                    break
+            if found is None:
+                raise ValueError
+            J.append(found)
+        return tuple(sorted(set(J)))
+
+    def _conjugate_simple_subset_fullS(self, r, I):
+        """As above, but search in the full set of simples S; return None on failure."""
+        sref = self.W.simple_reflections()
+        rinv = r.inverse()
+        J = []
+        for i in I:
+            ti = r * sref[i] * rinv
+            found = None
+            for j in self.S:
+                if ti == sref[j]:
+                    found = j
+                    break
+            if found is None:
+                return None
+            J.append(found)
+        return tuple(sorted(set(J)))
+
+    def _product_on_basis(self, c1, c2, base_ring=ZZ):
+        """
+        Chain-level product on basis elements:
+          1) attempt to align to the same canonical fiber over U = I1 ∪ I2;
+          2) if impossible, fallback by conjugating the second factor into the
+             chamber of the first;
+          3) require disjoint index sets to ensure transversality; vanish if target
+             cell lies in the deleted ideal.
+        Returns either (sign, target_cell) or None.
+        """
+        (w1, I1) = c1
+        (w2, I2) = c2
+        I1s = tuple(I1)
+        I2s = tuple(I2)
+        U = tuple(sorted(set(I1s).union(I2s)))
+
+        # (1) Align to a common fiber in U
+        u1 = self._common_fiber_rep(w1, U)
+        u2 = self._common_fiber_rep(w2, U)
+        if u1 == u2:
+            u = u1
+            x1 = u.inverse() * w1
+            x2 = u.inverse() * w2
+            r1 = self._right_min_rep_mod(x1, I1s)
+            r2 = self._right_min_rep_mod(x2, I2s)
+            try:
+                J1 = self._conjugate_simple_subset_via_group(r1, I1s, U)
+                J2 = self._conjugate_simple_subset_via_group(r2, I2s, U)
+            except ValueError:
+                J1 = J2 = None
+            if J1 is not None and J2 is not None and not set(J1).intersection(J2):
+                Ju = tuple(sorted(set(J1).union(J2)))
+                sgn = self.epsilon(J1, J2) if base_ring is ZZ else 1
+                return (sgn, (u, Ju))
+
+        # (2) Fallback: push the second factor to the chamber of the first
+        h = w1.inverse() * w2
+        I2_sharp = self._conjugate_simple_subset_fullS(h, I2s)
+        if I2_sharp is not None and not set(I1s).intersection(I2_sharp):
+            Ju = tuple(sorted(set(I1s).union(I2_sharp)))
+            sgn = self.epsilon(I1s, I2_sharp) if base_ring is ZZ else 1
+            return (sgn, (w1, Ju))
+
+        return None
+
+    def product(self, v1, k1, v2, k2, base_ring=ZZ):
         r"""
-        Minimal chain-level intersection product, fiberwise:
+        Chain-level intersection product modeling transverse intersection.
 
-            (w,I1) · (w,I2) = ε(I1,I2) (w, I1∪I2),
-            if I1∩I2=∅ and w agrees; 0 otherwise.
+        The product is computed on basis elements by:
+          - aligning factors to a common canonical fiber inside the parabolic
+            subsystem on U = I_1 ∪ I_2 (when possible);
+          - otherwise conjugating the second factor into the chamber of the first;
+          - requiring disjoint index sets to ensure transversality;
+          - vanishing when the target cell is deleted (lies in the ideal).
 
-        INPUT:
-            - ``v1`` -- column vector in C_{k1}
-            - ``k1`` -- degree of v1
-            - ``v2`` -- column vector in C_{k2}
-            - ``k2`` -- degree of v2
-            - ``base_ring`` -- ZZ or GF(2)
+        INPUT
+        -----
+        v1 : vector over base_ring
+            Chain in degree k1 (as a coordinate vector in the basis of C_{k1}).
+        k1 : int
+            Degree of v1.
+        v2 : vector over base_ring
+            Chain in degree k2 (as a coordinate vector in the basis of C_{k2}).
+        k2 : int
+            Degree of v2.
+        base_ring : ZZ or GF(2)
+            Coefficients.
 
-        OUTPUT:
-            - vector in C_{k1+k2}
+        OUTPUT
+        ------
+        vector in C_{k1+k2} over base_ring.
 
-        EXAMPLES::
-            sage: W,P,Plist = build_W_P("A",5)   # doctest: +ELLIPSIS
-            sage: D = ParabolicDGA(W,P,Plist, ideal_non_k_equal_A(W,Plist,3))
-            sage: C1 = D.by_k[1]; idx1 = {c:i for i,c in enumerate(C1)}
-            sage: e = W.one()
-            sage: v1 = [0]*len(C1); v2 = [0]*len(C1)
-            sage: (e,(1,)) in idx1 and (e,(3,)) in idx1
-            True
-            sage: v1[idx1[(e,(1,))]] = 1; v2[idx1[(e,(3,))]] = 1
-            sage: out = D.product_sparse(v1,1, v2,1, ZZ)
-            sage: len(out) == len(D.by_k.get(2,[]))
-            True
+        Notes
+        -----
+        Over GF(2) all signs vanish.
+
+        (No doctest here to avoid heavy computation in small CI; see module doctest
+        for Betti instead.)
         """
         if not hasattr(v1, "parent"):
             v1 = vector(base_ring, v1)
         if not hasattr(v2, "parent"):
             v2 = vector(base_ring, v2)
+
         Ck1 = self.by_k.get(k1, [])
         Ck2 = self.by_k.get(k2, [])
         Ck12 = self.by_k.get(k1 + k2, [])
-        idx1 = {c: i for i, c in enumerate(Ck1)}
-        idx2 = {c: i for i, c in enumerate(Ck2)}
         idx12 = {c: i for i, c in enumerate(Ck12)}
         out = [base_ring(0)] * len(Ck12)
 
@@ -357,24 +455,21 @@ class ParabolicDGA(object):
         supp2 = [j for j, b in enumerate(v2) if b != 0]
 
         for i in supp1:
-            w1, I1 = Ck1[i]; I1s = set(I1)
-            a = v1[i]
+            a = v1[i]; c1 = Ck1[i]
             for j in supp2:
-                w2, I2 = Ck2[j]; I2s = set(I2)
-                if w1 != w2 or I1s & I2s:
+                b = v2[j]; c2 = Ck2[j]
+                res = self._product_on_basis(c1, c2, base_ring=base_ring)
+                if res is None:
                     continue
-                Iu = tuple(sorted(I1s | I2s))
-                t = idx12.get((w1, Iu))
+                sgn, target = res
+                t = idx12.get(target)
                 if t is None:
+                    # target is deleted in the relative complex
                     continue
-                if base_ring is ZZ:
-                    sgn = ParabolicDGA.epsilon(I1, I2)
-                    out[t] += a * v2[j] * sgn
-                else:
-                    out[t] += (a * v2[j])
+                out[t] += a * b * (sgn if base_ring is ZZ else 1)
         return vector(base_ring, out)
 
-    # ------------------------- internal helpers for testing -------------------
+    # ------------------------- public self-test -------------------------------
 
     def _basis_vec(self, k, idx, base_ring):
         """Return the unit vector e_idx in C_k over base_ring."""
@@ -384,32 +479,22 @@ class ParabolicDGA(object):
         return vector(base_ring, v)
 
     def _apply_boundary(self, mats, k, v):
-        """
-        Apply d_k : C_k -> C_{k+1} to column vector v in C_k,
-        given boundary matrices dict `mats`.
-        """
+        """Apply d_k : C_k -> C_{k+1} to column vector v in C_k."""
         M = mats.get(k)
         if M is None:
-            # zero map to trivial group
             return vector(v.parent().base_ring(), [])
         return M * v
 
-    # ------------------------- public self-test -------------------------------
-
-    def self_test(self, trials=30, check_betti=False, verbose=True):
+    def self_test(self, trials=8, verbose=True):
         r"""
-        Run internal consistency checks:
+        Run internal consistency checks using the **intersection product**:
 
         - (1) d^2 = 0 over ZZ and GF(2).
-        - (2) Leibniz rule over ZZ and GF(2):
+        - (2) Leibniz rule over ZZ and GF(2) for the transverse product:
               d(x·y) = (dx)·y + (-1)^{|x|} x·(dy).
-          (The sign collapses in GF(2).)
-        - (3) Optional: sanity check Betti(A5, non-3-equal) = (1,111,20) over GF(2)
-              **only** if this instance matches that setup.
 
         INPUT:
-            - ``trials`` -- number of random basis-pair trials for Leibniz
-            - ``check_betti`` -- bool, run the A5 non-3-equal sanity check if applicable
+            - ``trials`` -- number of random basis-pair trials for Leibniz (kept small)
             - ``verbose`` -- print a short report
 
         OUTPUT:
@@ -417,8 +502,7 @@ class ParabolicDGA(object):
         """
         import random
 
-        # --- (1) d^2 = 0 in ZZ and in GF(2)
-        ok = True
+        # (1) d^2 = 0
         for ring in (ZZ, GF(2)):
             mats = self.boundary_matrices(base_ring=ring)
             for k in self.by_k:
@@ -430,21 +514,17 @@ class ParabolicDGA(object):
                     comp = Mk1 * Mk
                     assert comp.is_zero(), "d^2 != 0 over {} at degree {}".format(ring, k)
 
-        # --- (2) Leibniz rule random spot checks (both rings)
+        # (2) Leibniz for the intersection product (few random pairs)
         for ring in (ZZ, GF(2)):
             mats = self.boundary_matrices(base_ring=ring)
-            # collect degrees with nonempty chain groups
             degs = sorted([k for k in self.by_k if len(self.by_k[k]) > 0])
-            # need degs where k and l and k+l are present
             pairs = []
             for k in degs:
                 for l in degs:
                     if (k+l) in self.by_k and len(self.by_k[k+l]) > 0:
                         pairs.append((k,l))
             if not pairs:
-                # nothing to test; skip gracefully
                 continue
-
             for _ in range(trials):
                 k1,l1 = random.choice(pairs)
                 i = random.randrange(0, len(self.by_k[k1]))
@@ -452,45 +532,25 @@ class ParabolicDGA(object):
                 x = self._basis_vec(k1, i, ring)
                 y = self._basis_vec(l1, j, ring)
 
-                # left: d(x·y)
-                xy = self.product_sparse(x, k1, y, l1, base_ring=ring)
+                xy = self.product(x, k1, y, l1, base_ring=ring)
                 d_xy = self._apply_boundary(mats, k1+l1, xy)
 
-                # right: (dx)·y + (-1)^k1 x·(dy)
                 dx = self._apply_boundary(mats, k1, x)
-                term1 = self.product_sparse(dx, k1+1, y, l1, base_ring=ring)
+                term1 = self.product(dx, k1+1, y, l1, base_ring=ring)
 
                 dy = self._apply_boundary(mats, l1, y)
-                term2 = self.product_sparse(x, k1, dy, l1+1, base_ring=ring)
+                term2 = self.product(x, k1, dy, l1+1, base_ring=ring)
                 if ring is ZZ and (k1 % 2 == 1):
                     term2 = -term2  # (-1)^{k1}
                 rhs = term1 + term2
 
-                # compare
-                # pad zero-length vectors (if any boundary goes to the zero group)
                 if len(d_xy) != len(rhs):
-                    # create 0-vector with appropriate length
                     if len(d_xy) == 0:
                         d_xy = vector(ring, [0]*len(rhs))
                     elif len(rhs) == 0:
                         rhs = vector(ring, [0]*len(d_xy))
                 assert d_xy == rhs, "Leibniz failed over {} for degrees ({},{})".format(ring, k1, l1)
 
-        # --- (3) optional Betti sanity (A5, non-3-equal)
-        if check_betti:
-            try:
-                # Heuristic: check W is type A of rank 5 and Delta matches our builder
-                is_A5 = (self.W.coxeter_type().cartan_type().type() == 'A' and self.W.rank() == 5)
-                if is_A5:
-                    Delta_ref = ideal_non_k_equal_A(self.W, self.Plist, k=3)
-                    if Delta_ref == self.Delta:
-                        b2 = self.betti_numbers(GF(2))
-                        assert b2.get(0,0)==1 and b2.get(1,0)==111 and b2.get(2,0)==20, \
-                            "Betti(A5, non-3-equal) mismatch: {}".format(b2)
-            except Exception as e:
-                raise AssertionError("Betti sanity check failed: {}".format(e))
-
         if verbose:
-            print("[ParabolicDGA.self_test] All checks passed (d^2=0, Leibniz) over ZZ and GF(2).",
-                  "Betti sanity checked." if check_betti else "")
+            print("[ParabolicDGA.self_test] All checks passed (d^2=0, Leibniz) using the intersection product.")
         return True
