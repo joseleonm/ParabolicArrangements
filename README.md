@@ -112,6 +112,10 @@ MIT License - see [LICENSE](LICENSE) file.
 - José Luis León-Medina ([@joseleonm](https://github.com/joseleonm))
 - José Cantarero
 
+## Acknowledgments
+
+Parts of the documentation were drafted with AI assistance and reviewed/edited by the authors.
+
 ---
 
 **Version**: 2.0.0 | **Updated**: January 2025
