@@ -2,6 +2,7 @@
 .backups_sage/
 .debug_notebooks/
 .debug_misc/
+.docs_session/
 
 # Python
 __pycache__/
