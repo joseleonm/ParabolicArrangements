@@ -107,11 +107,6 @@ For theoretical background, see:
 
 MIT License - see [LICENSE](LICENSE) file.
 
-## Authors
-
-- José Luis León-Medina ([@joseleonm](https://github.com/joseleonm))
-- José Cantarero
-
 ## Acknowledgments
 
 Parts of the documentation were drafted with AI assistance and reviewed/edited by the authors.
