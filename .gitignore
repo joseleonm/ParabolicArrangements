@@ -1,0 +1,34 @@
+# Backup and debug folders (local only)
+.backups_sage/
+.debug_notebooks/
+.debug_misc/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# Sage
+*.sage.py
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Data and logs
+*.log
+*.csv
+overnight_*/
