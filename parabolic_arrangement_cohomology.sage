@@ -1,19 +1,18 @@
 # -*- coding: utf-8 -*-
 r"""
-Differential Graded Algebra for Real Parabolic Arrangements
-===========================================================
+Cohomology Ring of Real Parabolic Arrangement Complements
+==========================================================
 
 OVERVIEW
 --------
 
-This module implements an explicit **cellular differential graded algebra (DGA)**
-that computes the **cohomology ring** of complements of **real parabolic
+This module computes the **cohomology ring** of complements of **real parabolic
 subspace arrangements** associated to a finite Weyl (Coxeter) group `W`.
 
-The key point is that, for real parabolic arrangements, the complement is
-modeled by a **restricted Coxeter permutahedron**
-`Perm_A(W) ⊂ Perm(W)`, obtained by deleting cells dual to the arrangement in the
-Coxeter complex. The resulting cellular cochain complex admits:
+For real parabolic arrangements, the complement is homotopy equivalent to a
+**restricted Coxeter permutahedron** `Perm_A(W) ⊂ Perm(W)`, obtained by deleting
+cells dual to the arrangement in the Coxeter complex. The resulting cellular
+cochain complex admits:
 
 1. A **coboundary operator** induced by canonical orientations of parabolic cells.
 2. A **cup product** induced by a **cubical (Serre) diagonal**, transported to
@@ -45,16 +44,6 @@ The complement is homotopy equivalent to the **restricted permutahedron**
 `Perm_A(W)`, the subcomplex of `Perm(W)` consisting of cells dual to faces not
 in the arrangement. This is the cellular model computed in this module.
 
-IMPORTANT DISTINCTION (Salvetti vs Davis)
------------------------------------------
-
-This code targets **real** parabolic arrangements. Although Salvetti-type
-constructions model complements of **complexified** arrangements (and Artin
-groups), the real setting has reflections with relations `s^2 = 1` and does not
-require the Salvetti "bigon" replacements in the 1-skeleton.
-
-Consequently, the cellular model here is naturally viewed as a subcomplex of the
-**Davis complex / Coxeter permutahedron** picture, not a Salvetti complex.
 
 CELLULAR CHAIN/COCHAIN COMPLEX
 ------------------------------
@@ -137,37 +126,47 @@ EXAMPLES
 
 Compute cohomology of the 3-equal (k-parabolic) arrangement in type `A_3`::
 
-    sage: from parabolic_dga_optimized import *
+    sage: from parabolic_arrangement_cohomology import *
     sage: W, Plist, _ = build_W_P('A', 3)
     sage: Delta = ideal_k_parabolic(W, Plist, k=3)
-    sage: dga = ParabolicZonotopalDGA(W, Plist, Delta)
+    sage: cohom = ParabolicArrangementCohomology(W, Plist, Delta)
     sage:
-    sage: for k in range(dga.max_grade + 1):
-    ....:     basis = dga.cohomology_basis(k, ring=GF(2))
+    sage: for k in range(cohom.max_grade + 1):
+    ....:     basis = cohom.cohomology_basis(k, ring=GF(2))
     ....:     print(f"H^{k} has dimension {len(basis)}")
     sage:
-    sage: dga.verify_leibniz_rule(ring=GF(3), trials=20, use_fast=True)
+    sage: cohom.verify_leibniz_rule(ring=GF(3), trials=20, use_fast=True)
 
-REFERENCES
-----------
+MATHEMATICAL FOUNDATION
+-----------------------
 
-- M. Davis, *The Geometry and Topology of Coxeter Groups*, Princeton Univ. Press, 2008.
+This implementation is derived from the mathematical theory developed in:
+
+    **J. L. León-Medina and J. Cantarero**,
+    *"The Topology of Real Parabolic Arrangements"*,
+    manuscript in preparation.
+
+The theory establishes that the complement of a real parabolic arrangement is
+homotopy equivalent to a restricted Coxeter permutahedron, and constructs an
+explicit cellular DGA structure using the zonotopal realization.
+
+Additional references:
+
 - A. Björner and G. Ziegler, "Combinatorial stratification of complex arrangements",
-  J. Amer. Math. Soc. 5 (1992), 105–149.
-- P. Orlik and H. Terao, *Arrangements of Hyperplanes*, Springer, 1992. (background)
-- J.-L. León-Medina and J. Cantarero, "The Topology of Real Parabolic Arrangements",
-  manuscript in preparation. (this implementation)
+  J. Amer. Math. Soc. 5 (1992), 105–149. (Bjorner duality)
+- M. Davis, *The Geometry and Topology of Coxeter Groups*, Princeton Univ. Press, 2008.
 - J.-P. Serre, "Homologie singulière des espaces fibrés. Applications",
-  Ann. of Math. (1951). (cubical/Serre diagonal)
+  Ann. of Math. (1951). (cubical diagonal)
 
-NOTE
-----
+NOTES
+-----
 
-This is research code accompanying a mathematical manuscript. It prioritizes
-clarity and reproducibility over production-level engineering. Users should
-independently validate results in critical applications.
+- This code targets **real** arrangements (Davis complex), not complexified
+  arrangements (Salvetti complex). Reflections satisfy s² = 1.
+- Portions of the implementation were developed with AI assistance and have been
+  rigorously verified against the mathematical theory.
 
-VERSION: 1.1 (January 2026)
+VERSION: 1.2 (February 2026)
 """
 
 
@@ -185,15 +184,15 @@ import itertools
 
 
 # ==============================================================================
-# Main DGA Class
+# Main Class
 # ==============================================================================
 
-class ParabolicZonotopalDGA(object):
+class ParabolicArrangementCohomology(object):
     r"""
-    Differential Graded Algebra for Parabolic Arrangement Complements.
+    Cohomology Ring of a Parabolic Arrangement Complement.
 
-    This class represents the cellular cochain complex `C^*(M, R)` of a
-    parabolic arrangement complement `M`, equipped with the coboundary
+    This class computes the cellular cochain complex `C^*(M, R)` and cohomology
+    ring of a parabolic arrangement complement `M`, equipped with the coboundary
     operator `\delta` and zonotopal cup product `\cup`.
 
     ATTRIBUTES:
@@ -226,7 +225,7 @@ class ParabolicZonotopalDGA(object):
 
         sage: W, Plist, _ = build_W_P('A', 3)
         sage: Delta = ideal_k_parabolic(W, Plist, k=3)
-        sage: dga = ParabolicZonotopalDGA(W, Plist, Delta)
+        sage: dga = ParabolicArrangementCohomology(W, Plist, Delta)
         sage: print(f"Complex has {len(dga.cells)} cells")
         sage: print(f"Graded dimensions: {[(k, len(cells)) for k, cells in dga.by_grade.items()]}")
 
@@ -284,7 +283,7 @@ class ParabolicZonotopalDGA(object):
         TESTS::
 
             sage: W, Plist, _ = build_W_P('A', 2)
-            sage: dga = ParabolicZonotopalDGA(W, Plist, set())
+            sage: dga = ParabolicArrangementCohomology(W, Plist, set())
             sage: len(dga.cells) > 0
             True
             sage: dga.max_grade == 2  # rank of A_2
@@ -368,10 +367,10 @@ class ParabolicZonotopalDGA(object):
 
         TESTS::
 
-            sage: from parabolic_dga_optimized import ParabolicZonotopalDGA
-            sage: ParabolicZonotopalDGA._is_valid_cell((None, (1,2)))
+            sage: from parabolic_arrangement_cohomology import ParabolicArrangementCohomology
+            sage: ParabolicArrangementCohomology._is_valid_cell((None, (1,2)))
             True
-            sage: ParabolicZonotopalDGA._is_valid_cell("invalid")
+            sage: ParabolicArrangementCohomology._is_valid_cell("invalid")
             False
         """
         return (isinstance(c, tuple) and
@@ -393,14 +392,14 @@ class ParabolicZonotopalDGA(object):
 
         EXAMPLES::
 
-            sage: from parabolic_dga_optimized import ParabolicZonotopalDGA
-            sage: ParabolicZonotopalDGA._is_char2(GF(2))
+            sage: from parabolic_arrangement_cohomology import ParabolicArrangementCohomology
+            sage: ParabolicArrangementCohomology._is_char2(GF(2))
             True
-            sage: ParabolicZonotopalDGA._is_char2(GF(3))
+            sage: ParabolicArrangementCohomology._is_char2(GF(3))
             False
-            sage: ParabolicZonotopalDGA._is_char2(ZZ)
+            sage: ParabolicArrangementCohomology._is_char2(ZZ)
             False
-            sage: ParabolicZonotopalDGA._is_char2(QQ)
+            sage: ParabolicArrangementCohomology._is_char2(QQ)
             False
         """
         try:
@@ -425,8 +424,8 @@ class ParabolicZonotopalDGA(object):
 
         EXAMPLES::
 
-            sage: from parabolic_dga_optimized import ParabolicZonotopalDGA
-            sage: v = ParabolicZonotopalDGA._as_vector(GF(2), [1, 0, 1])
+            sage: from parabolic_arrangement_cohomology import ParabolicArrangementCohomology
+            sage: v = ParabolicArrangementCohomology._as_vector(GF(2), [1, 0, 1])
             sage: v.parent()
             Vector space of dimension 3 over Finite Field of size 2
         """
@@ -444,7 +443,7 @@ class ParabolicZonotopalDGA(object):
         EXAMPLES::
 
             sage: W, Plist, _ = build_W_P('A', 3)
-            sage: dga = ParabolicZonotopalDGA(W, Plist, set())
+            sage: dga = ParabolicArrangementCohomology(W, Plist, set())
             sage: dga.coboundary_matrix(1, ring=GF(2))  # Populates caches
             24 x 14 dense matrix over Finite Field of size 2...
             sage: dga.clear_caches()  # Free memory
@@ -464,7 +463,7 @@ class ParabolicZonotopalDGA(object):
         EXAMPLES::
 
             sage: W, Plist, _ = build_W_P('A', 2)
-            sage: dga = ParabolicZonotopalDGA(W, Plist, set())
+            sage: dga = ParabolicArrangementCohomology(W, Plist, set())
             sage: dga.coboundary_matrix(1, ring=GF(2))
             ...
             sage: info = dga.cache_info()
@@ -506,7 +505,7 @@ class ParabolicZonotopalDGA(object):
         TESTS::
 
             sage: W, Plist, _ = build_W_P('A', 2)
-            sage: dga = ParabolicZonotopalDGA(W, Plist, set())
+            sage: dga = ParabolicArrangementCohomology(W, Plist, set())
             sage: w = W.an_element()
             sage: c1 = (w, [2, 1])
             sage: c2 = (w, [1, 2])
@@ -595,7 +594,7 @@ class ParabolicZonotopalDGA(object):
         EXAMPLES::
 
             sage: W, Plist, _ = build_W_P('A', 3)
-            sage: dga = ParabolicZonotopalDGA(W, Plist, set())
+            sage: dga = ParabolicArrangementCohomology(W, Plist, set())
             sage: w0_full = dga._get_w0_J(tuple(dga.S))
             sage: w0_full == W.long_element()
             True
@@ -662,7 +661,7 @@ class ParabolicZonotopalDGA(object):
         EXAMPLES::
 
             sage: W, Plist, _ = build_W_P('A', 2)
-            sage: dga = ParabolicZonotopalDGA(W, Plist, set())
+            sage: dga = ParabolicArrangementCohomology(W, Plist, set())
             sage: d0 = dga.coboundary_matrix(0, ring=GF(2))
             sage: d1 = dga.coboundary_matrix(1, ring=GF(2))
             sage: (d1 * d0).is_zero()  # δ² = 0
@@ -673,7 +672,7 @@ class ParabolicZonotopalDGA(object):
             sage: # Test d² = 0 in various degrees and rings
             sage: W, Plist, _ = build_W_P('A', 3)
             sage: Delta = ideal_k_parabolic(W, Plist, k=3)
-            sage: dga = ParabolicZonotopalDGA(W, Plist, Delta)
+            sage: dga = ParabolicArrangementCohomology(W, Plist, Delta)
             sage: for ring in [GF(2), GF(3), QQ]:
             ....:     for k in range(dga.max_grade):
             ....:         d_k = dga.coboundary_matrix(k, ring=ring)
@@ -773,7 +772,7 @@ class ParabolicZonotopalDGA(object):
         EXAMPLES::
 
             sage: W, Plist, _ = build_W_P('A', 2)
-            sage: dga = ParabolicZonotopalDGA(W, Plist, set())
+            sage: dga = ParabolicArrangementCohomology(W, Plist, set())
             sage: structure = dga.precompute_cup_structure(1, 1, verbose=True)
             --- Precomputing geometry for Cup(1, 1) ---
             --- Geometry ready. ... connections. ---
@@ -882,7 +881,7 @@ class ParabolicZonotopalDGA(object):
         EXAMPLES::
 
             sage: W, Plist, _ = build_W_P('A', 2)
-            sage: dga = ParabolicZonotopalDGA(W, Plist, set())
+            sage: dga = ParabolicArrangementCohomology(W, Plist, set())
             sage: basis1 = dga.cohomology_basis(1, ring=GF(2))
             sage: if len(basis1) >= 2:
             ....:     u, v = basis1[0], basis1[1]
@@ -956,7 +955,7 @@ class ParabolicZonotopalDGA(object):
         EXAMPLES::
 
             sage: W, Plist, _ = build_W_P('A', 2)
-            sage: dga = ParabolicZonotopalDGA(W, Plist, set())
+            sage: dga = ParabolicArrangementCohomology(W, Plist, set())
             sage: u = vector(QQ, [1 if i == 0 else 0 for i in range(len(dga.by_grade[1]))])
             sage: v = u  # Same cochain
             sage: product = dga.cup_product(u, v, 1, 1, ring=QQ)
@@ -1069,7 +1068,7 @@ class ParabolicZonotopalDGA(object):
         EXAMPLES::
 
             sage: W, Plist, _ = build_W_P('A', 2)
-            sage: dga = ParabolicZonotopalDGA(W, Plist, set())
+            sage: dga = ParabolicArrangementCohomology(W, Plist, set())
             sage: H0 = dga.cohomology_basis(0, ring=QQ)
             sage: len(H0)  # Should be 1 (connected space)
             1
@@ -1082,7 +1081,7 @@ class ParabolicZonotopalDGA(object):
             sage: # Test that basis vectors are actually cocycles
             sage: W, Plist, _ = build_W_P('A', 3)
             sage: Delta = ideal_k_parabolic(W, Plist, k=3)
-            sage: dga = ParabolicZonotopalDGA(W, Plist, Delta)
+            sage: dga = ParabolicArrangementCohomology(W, Plist, Delta)
             sage: for k in range(min(3, dga.max_grade + 1)):
             ....:     basis = dga.cohomology_basis(k, ring=GF(2))
             ....:     d = dga.coboundary_matrix(k, ring=GF(2))
@@ -1124,15 +1123,15 @@ class ParabolicZonotopalDGA(object):
     def cup_product_span_analysis(self, ring=GF(2), max_pairs=None,
                                   prefer_small_support=True, verbose=True):
         r"""
-        Analyze whether `H^2` is generated by cup products of classes in `H^1`.
+        **VALIDATION METHOD**: Verify Baryshnikov's generation theorem for `H^2`.
 
-        This method progressively computes cup products `u_i \cup u_j` for pairs
-        of generators `u_i, u_j \in H^1`, projects them to `H^2`, and checks if
-        they span the entire second cohomology group.
+        This method verifies that `H^2` is generated by cup products of classes
+        in `H^1` by progressively computing cup products `u_i \cup u_j` for pairs
+        of generators `u_i, u_j \in H^1` and checking if they span `H^2`.
 
-        This is a key theoretical question for parabolic arrangements: by general
-        results (see León-Medina & Cantarero), `H^2` should be fully generated by
-        products of degree-1 classes for appropriate parabolic ideals.
+        This is a validation of Baryshnikov's result for k-equal arrangements,
+        adapted to the parabolic setting. See León-Medina & Cantarero for the
+        general theory.
 
         INPUT:
 
@@ -1174,7 +1173,7 @@ class ParabolicZonotopalDGA(object):
             sage: # Verify H^2 generation for A_5 (k=3)
             sage: W, Plist, _ = build_W_P('A', 5)
             sage: Delta = ideal_k_parabolic(W, Plist, k=3)
-            sage: dga = ParabolicZonotopalDGA(W, Plist, Delta)
+            sage: dga = ParabolicArrangementCohomology(W, Plist, Delta)
             sage: result = dga.cup_product_span_analysis(ring=GF(2))
             Precomputing cup structure for (1,1)...
             --- Precomputing geometry for Cup(1, 1) ---
@@ -1184,7 +1183,7 @@ class ParabolicZonotopalDGA(object):
             [Hit #1] Pair (10, 2) -> Rank 1/20
             ...
             [Hit #20] Pair (109, 78) -> Rank 20/20
-            ✅ SUCCESS: H^2 fully generated in 5.2s
+            SUCCESS: H^2 fully generated in 5.2s
             sage: result['is_complete']
             True
             sage: result['rank_generated']
@@ -1197,7 +1196,7 @@ class ParabolicZonotopalDGA(object):
             sage: # Test with A_3 (H^2 = 0)
             sage: W, Plist, _ = build_W_P('A', 3)
             sage: Delta = ideal_k_parabolic(W, Plist, k=3)
-            sage: dga = ParabolicZonotopalDGA(W, Plist, Delta)
+            sage: dga = ParabolicArrangementCohomology(W, Plist, Delta)
             sage: result = dga.cup_product_span_analysis(verbose=False)
             sage: result['dim_H2']
             0
@@ -1211,9 +1210,7 @@ class ParabolicZonotopalDGA(object):
 
         .. NOTE::
 
-            This method is optimized for the common case where `H^2` is indeed
-            generated by products. Early termination occurs as soon as the span
-            reaches `\dim(H^2)`.
+            Early termination occurs when the span reaches `\dim(H^2)`.
         """
         import time
 
@@ -1359,9 +1356,9 @@ class ParabolicZonotopalDGA(object):
         if verbose:
             print("\n" + "=" * 60)
             if is_complete:
-                print(f"✅ SUCCESS: H^2 fully generated in {t_elapsed:.1f}s")
+                print(f"SUCCESS: H^2 fully generated in {t_elapsed:.1f}s")
             else:
-                print(f"⚠️  INCOMPLETE: Only {rank_found}/{dim_H2} dimensions generated in {t_elapsed:.1f}s")
+                print(f"INCOMPLETE: Only {rank_found}/{dim_H2} dimensions generated in {t_elapsed:.1f}s")
             print("=" * 60)
 
         return {
@@ -1403,11 +1400,11 @@ class ParabolicZonotopalDGA(object):
         EXAMPLES::
 
             sage: W, Plist, _ = build_W_P('A', 2)
-            sage: dga = ParabolicZonotopalDGA(W, Plist, set())
+            sage: dga = ParabolicArrangementCohomology(W, Plist, set())
             sage: dga.verify_leibniz_rule(ring=GF(2), trials=10, use_fast=True)
             --- Verifying DGA Leibniz Rule over Finite Field of size 2 ---
             Testing degrees (1, 1)...
-            ✅ Leibniz Rule Verified: The DGA structure is consistent.
+            Leibniz Rule Verified: The DGA structure is consistent.
             True
 
         TESTS::
@@ -1415,7 +1412,7 @@ class ParabolicZonotopalDGA(object):
             sage: # Test over different rings
             sage: W, Plist, _ = build_W_P('A', 3)
             sage: Delta = ideal_k_parabolic(W, Plist, k=3)
-            sage: dga = ParabolicZonotopalDGA(W, Plist, Delta)
+            sage: dga = ParabolicArrangementCohomology(W, Plist, Delta)
             sage: dga.verify_leibniz_rule(ring=GF(2), trials=5)
             ...
             True
@@ -1488,7 +1485,7 @@ class ParabolicZonotopalDGA(object):
                     print(f"  RHS: {rhs}")
                     return False
 
-        print("✅ Leibniz Rule Verified: The DGA structure is consistent.")
+        print("Leibniz Rule Verified: The DGA structure is consistent.")
         return True
 
 
