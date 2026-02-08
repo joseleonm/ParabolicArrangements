@@ -1,7 +1,0 @@
-name: sage
-channels:
-  - conda-forge
-  - defaults
-dependencies:
-  - sage>=10.0
-  - notebook
