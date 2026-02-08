@@ -13,9 +13,11 @@ ENV NB_UID=${NB_UID}
 ENV HOME=/home/${NB_USER}
 RUN adduser --disabled-password --gecos "Default user" --uid ${NB_UID} ${NB_USER}
 
-# Copy repository into the user's home
-COPY . ${HOME}/repo
-RUN chown -R ${NB_USER}:${NB_USER} ${HOME}
+# Copy only the module and demo notebook into the user's home
+RUN mkdir -p ${HOME}/repo/notebooks
+COPY parabolic_arrangement_cohomology.sage ${HOME}/repo/
+COPY notebooks/demo.ipynb ${HOME}/repo/notebooks/
+RUN chown -R ${NB_USER}:${NB_USER} ${HOME}/repo
 
 # Switch to the user
 USER ${NB_USER}

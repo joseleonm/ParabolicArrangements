@@ -126,7 +126,7 @@ If you use this software in your research, please cite:
 
 ```bibtex
 @misc{leon2025parabolic,
-  author = {León-Medina, J. L. and Cantarero, J.},
+  author = {Cantarero, J. and León-Medina, J. L.},
   title = {The Topology of Real Parabolic Arrangements},
   year = {2025},
   note = {Manuscript in preparation}
@@ -137,7 +137,7 @@ If you use this software in your research, please cite:
 
 This implementation is derived from the mathematical theory developed in:
 
-> **J. L. León-Medina and J. Cantarero**,
+> **J. Cantarero and J. L. León-Medina**,
 > *"The Topology of Real Parabolic Arrangements"*,
 > manuscript in preparation.
 

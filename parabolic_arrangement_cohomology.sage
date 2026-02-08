@@ -142,7 +142,7 @@ MATHEMATICAL FOUNDATION
 
 This implementation is derived from the mathematical theory developed in:
 
-    **J. L. León-Medina and J. Cantarero**,
+    **J. Cantarero and J. L. León-Medina**,
     *"The Topology of Real Parabolic Arrangements"*,
     manuscript in preparation.
 
@@ -1130,7 +1130,7 @@ class ParabolicArrangementCohomology(object):
         of generators `u_i, u_j \in H^1` and checking if they span `H^2`.
 
         This is a validation of Baryshnikov's result for k-equal arrangements,
-        adapted to the parabolic setting. See León-Medina & Cantarero for the
+        adapted to the parabolic setting. See Cantarero & León-Medina for the
         general theory.
 
         INPUT:
@@ -1205,7 +1205,7 @@ class ParabolicArrangementCohomology(object):
 
         REFERENCES:
 
-        - J.-L. León-Medina and J. Cantarero, "The Topology of Real Parabolic
+        - J. Cantarero and J. L. León-Medina, "The Topology of Real Parabolic
           Arrangements", manuscript in preparation.
 
         .. NOTE::
