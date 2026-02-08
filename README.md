@@ -1,6 +1,6 @@
 # Parabolic Arrangements - Cohomology Ring Computation
 
-[![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/joseleonm/ParabolicArrangements/HEAD?labpath=notebooks%2Fdemo_parabolic_dga.ipynb)
+[![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/joseleonm/ParabolicArrangements/HEAD?labpath=notebooks%2Fdemo.ipynb)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![SageMath](https://img.shields.io/badge/SageMath-10.7+-blue.svg)](https://www.sagemath.org/)
 
