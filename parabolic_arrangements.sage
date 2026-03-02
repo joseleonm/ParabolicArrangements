@@ -459,12 +459,45 @@ class ParabolicArrangement(object):
         self._min_cache = OrderedDict()  # Manual LRU cache for minimization
         self._max_cache_size = max_cache_size
 
-        # Step 1: Canonicalize exclusion set
+        # Step 1: Canonicalize exclusion set and validate filter condition
         delta_clean = set()
         if Delta:
             for c in Delta:
                 if self._is_valid_cell(c):
                     delta_clean.add(self._canonize(c))
+
+        # Validate the order-filter (upper set) property of Delta:
+        # if (w, J) is removed, then every super-cell (w', K) with K ⊇ J
+        # must also be removed [CL, Definition of parabolic arrangement].
+        if delta_clean:
+            plist_canon = set()
+            for c in Plist:
+                if self._is_valid_cell(c):
+                    plist_canon.add(self._canonize(c))
+
+            _filter_warned = False
+            for (w, J) in list(delta_clean):
+                if _filter_warned:
+                    break
+                J_set = set(J)
+                for s in self._sref.keys():
+                    if s not in J_set:
+                        K = tuple(sorted(J_set | {s}))
+                        super_cell = self._canonize((w, K))
+                        if super_cell in plist_canon and super_cell not in delta_clean:
+                            import warnings
+                            warnings.warn(
+                                f"Delta is not an order filter: "
+                                f"cell {(w, J)} is removed but "
+                                f"super-cell {super_cell} of type "
+                                f"{K} is retained. The theoretical "
+                                f"guarantees of [CL] require Delta "
+                                f"to be an upper set in the face "
+                                f"poset.",
+                                stacklevel=2,
+                            )
+                            _filter_warned = True
+                            break
 
         # Step 2: Filter and canonicalize cells from Plist
         self.cells = []
@@ -1231,13 +1264,13 @@ class ParabolicArrangement(object):
 
         OUTPUT: a rational number (the Euler characteristic).
 
-        .. NOTE::
+        .. WARNING::
 
-            This method does NOT require that the arrangement be
-            `W`-invariant; it simply applies the formula using the
-            retained J-types.  For a truly `W`-invariant arrangement
-            the result will agree with :meth:`euler_characteristic`.
-            For non-invariant arrangements the result may differ.
+            The closed formula is valid **only** for `W`-invariant
+            arrangements [CL, Corollary in Section 6].  For non-invariant
+            arrangements the result may disagree with
+            :meth:`euler_characteristic`.  An explicit warning is printed
+            when non-invariance is detected.
 
         EXAMPLES::
 
@@ -1246,6 +1279,16 @@ class ParabolicArrangement(object):
             sage: arr.euler_characteristic_W_invariant()
             1
         """
+        if not self._check_J_type_invariant():
+            import warnings
+            warnings.warn(
+                "euler_characteristic_W_invariant(): the arrangement is "
+                "not W-invariant. The closed formula assumes "
+                "W-invariance and the result may be incorrect. "
+                "Use euler_characteristic() for the general case.",
+                stacklevel=2,
+            )
+
         W_order = ZZ(len(self.W))
 
         # Collect the set of retained J-types
@@ -1406,10 +1449,14 @@ class ParabolicArrangement(object):
 
         tf = len(triangles) == 0
 
-        # Check if the criterion is conclusive: requires no rank >= 3 strata
+        # The K(pi,1) conclusion requires TWO hypotheses:
+        #   (a) no rank >= 3 strata survive
+        #   (b) the arrangement is W-invariant [CL, Corollary: TF Criterion]
         has_rank3_plus = any(len(J) >= 3 for (_, J) in self.cells)
+        w_invariant = self._check_J_type_invariant()
+
         is_Kpi1 = None
-        if not has_rank3_plus:
+        if not has_rank3_plus and w_invariant:
             is_Kpi1 = tf  # criterion is both necessary and sufficient
 
         if verbose:
@@ -1434,6 +1481,10 @@ class ParabolicArrangement(object):
                       "the Triangle-Free Criterion is inconclusive.")
                 print("  (The criterion requires ALL rank >= 3 "
                       "strata removed.)")
+            elif not w_invariant:
+                print("WARNING: The arrangement is not W-invariant; "
+                      "the K(pi,1) conclusion requires W-invariance.")
+                print("  (is_Kpi1 is set to None.)")
             else:
                 if tf:
                     print("Conclusion: Gamma_A is triangle-free => "
