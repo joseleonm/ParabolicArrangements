@@ -16,7 +16,9 @@ RUN adduser --disabled-password --gecos "Default user" --uid ${NB_UID} ${NB_USER
 # Copy only the module and demo notebook into the user's home
 RUN mkdir -p ${HOME}/repo/notebooks
 COPY parabolic_arrangements.sage ${HOME}/repo/
-COPY notebooks/demo.ipynb ${HOME}/repo/notebooks/
+COPY notebooks/01_Cohomology_and_Asphericity.ipynb ${HOME}/repo/notebooks/
+COPY notebooks/02_Fundamental_Groups_and_Orbifolds.ipynb ${HOME}/repo/notebooks/
+COPY notebooks/03_Euler_Characteristic_and_Combinatorics.ipynb ${HOME}/repo/notebooks/
 RUN chown -R ${NB_USER}:${NB_USER} ${HOME}/repo
 
 # Switch to the user
@@ -45,5 +47,5 @@ logging.getLogger('LabApp').addFilter(NoNodeJSWarningFilter())\n\
 " > ${HOME}/.jupyter/jupyter_lab_config.py
 
 # Open the demo notebook by default
-RUN echo \"c.ServerApp.default_url = '/lab/tree/repo/notebooks/demo.ipynb'\" \
+RUN echo \"c.ServerApp.default_url = '/lab/tree/repo/notebooks/01_Cohomology_and_Asphericity.ipynb'\" \
   > ${HOME}/.jupyter/jupyter_server_config.py
