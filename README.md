@@ -245,7 +245,7 @@ MIT License — see [LICENSE](LICENSE).
 
 ## Acknowledgments
 
-Developed as part of **SECIHTI CBF2023-2024-4059: "Interacciones topológico-computacionales"**.
+Developed as part of SECIHTI research grant **CBF2023-2024-4059: "Interacciones topológico-computacionales"**.
 
 *Portions of the implementation were developed with AI assistance and have been rigorously verified against the mathematical theory.*
 
