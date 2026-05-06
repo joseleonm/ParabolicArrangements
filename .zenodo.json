@@ -1,0 +1,27 @@
+{
+  "title": "Parabolic Arrangements",
+  "description": "SageMath implementation for computing topological invariants of complements of real parabolic arrangements associated to finite Coxeter groups.",
+  "creators": [
+    {
+      "name": "León Medina, José Luis",
+      "affiliation": "CIMAT Mérida"
+    }
+  ],
+  "license": "MIT",
+  "access_right": "open",
+  "upload_type": "software",
+  "keywords": [
+    "SageMath",
+    "Coxeter groups",
+    "parabolic arrangements",
+    "algebraic topology",
+    "computational topology"
+  ],
+  "related_identifiers": [
+    {
+      "identifier": "https://github.com/joseleonm/ParabolicArrangements",
+      "relation": "isSupplementTo",
+      "resource_type": "software"
+    }
+  ]
+}

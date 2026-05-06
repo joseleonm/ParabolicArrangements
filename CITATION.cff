@@ -1,0 +1,30 @@
+cff-version: 1.2.0
+title: Parabolic Arrangements
+message: >-
+  If you use this software, please cite it using the metadata from this file.
+type: software
+authors:
+  - family-names: León Medina
+    given-names: José Luis
+    affiliation: CIMAT Mérida
+license: MIT
+version: 1.0.0
+date-released: 2026-05-05
+repository-code: https://github.com/joseleonm/ParabolicArrangements
+url: https://github.com/joseleonm/ParabolicArrangements
+keywords:
+  - SageMath
+  - Coxeter groups
+  - parabolic arrangements
+  - algebraic topology
+  - computational topology
+preferred-citation:
+  type: article
+  authors:
+    - family-names: Cantarero
+      given-names: José
+    - family-names: Leon-Medina
+      given-names: José Luis
+  title: The Topology of Real Parabolic Arrangements
+  year: 2026
+  note: Preprint
