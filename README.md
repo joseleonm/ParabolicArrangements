@@ -17,6 +17,7 @@ SageMath implementation for computing topological invariants of real parabolic a
 - [Supported Arrangements](#supported-arrangements)
 - [Repository Structure](#repository-structure)
 - [Tutorial Notebooks](#tutorial-notebooks)
+- [Reproducibility](#reproducibility)
 - [Citation](#citation)
 - [Mathematical Background](#mathematical-background)
 - [License](#license)
@@ -164,6 +165,37 @@ The mathematical theory applies to **any parabolic arrangement** (filter in the 
 
 The **k-parabolic ideal** constructor `ideal_k_parabolic(W, Plist, k)` generates the standard k-parabolic arrangements introduced by Severs and White.  Custom arrangements may be defined by specifying any filter `Delta` in the parabolic coset poset.
 
+## Repository Structure
+
+```
+parabolic_arrangements.sage   # Main module (v1.0.0)
+paper.tex                     # Accompanying paper
+notebooks/
+  01_Cohomology_and_Asphericity.ipynb    # Cohomology ring and DGA tutorial
+  02_Fundamental_Groups_and_Orbifolds.ipynb  # π₁ via complexes of groups
+  03_Euler_Characteristic_and_Combinatorics.ipynb  # Euler characteristic formulas
+tests/                        # Automated verification scripts
+  test_stress_dga.sage        # Stress tests: Leibniz rule across types/ranks
+  test_universal_coboundary.sage  # δ² = 0 verification
+  test_euler.sage             # Euler characteristic cross-checks
+  test_purity.sage            # Homological purity tests
+  test_exotic_valid_filters.sage  # Non-standard filter validation
+  test_structural_nonflag_D5.sage # D₅ non-flag example (non-commutative cells)
+  test_massey_D4.sage         # Massey product explorations (D₄)
+  test_C_RACG.sage            # Right-angled Coxeter groups
+  test_D_B3_RACG.sage         # B₃ right-angled quotient
+  test_E_B3_BSW.sage          # B₃ Barcelo–Severs–White comparison
+  test_F_trianglecriterion.sage  # Triangle-free criterion verification
+examples/                     # Standalone worked examples
+  example_B3_selective.sage
+  example_B4_4parabolic.sage
+  example_borromean_triples.sage
+  example_minimal_nonflag_D5.sage
+  example_minimal_nonflag_D6.sage
+legacy/                       # Archived earlier code
+binder/                       # Binder configuration (Dockerfile)
+```
+
 ## Tutorial Notebooks
 
 Three self-contained Jupyter notebooks (SageMath kernel) serve as the computational supplement to the paper:
@@ -174,9 +206,22 @@ Three self-contained Jupyter notebooks (SageMath kernel) serve as the computatio
 | **02 — Fundamental Groups and Orbifolds** | Permutahedral complex visualization, orbit structure, scwol construction, spanning tree, transport elements, Bridson–Haefliger group extensions, π₁ computation via three routes. |
 | **03 — Euler Characteristic** | Orbit-weighted Euler characteristic formula, cross-check against alternating Betti sums. |
 
+## Reproducibility
+
+This repository includes an explicit reproducibility setup:
+
+- `environment.yml`: Conda environment with SageMath and required tooling.
+- `REPRODUCIBILITY.md`: Step-by-step instructions for Binder, local setup, and built-in module validation in Sage.
+
 ## Citation
 
-If you use this software in your research, please cite:
+If you use this software in your research, cite both the software release and the accompanying paper.
+
+### Software citation
+
+Software metadata is provided in `CITATION.cff`.
+
+### Paper citation
 
 ```bibtex
 @misc{cantarero2025parabolic,
@@ -220,4 +265,4 @@ Developed as part of SECIHTI research grant **CBF2023-2024-4059: "Interacciones 
 
 ---
 
-**Version**: 3.0 | **Updated**: March 2026
+**Version**: 1.0.0 | **Updated**: May 2026
