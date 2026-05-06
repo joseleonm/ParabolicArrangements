@@ -3,6 +3,7 @@
 [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/joseleonm/ParabolicArrangements/HEAD?labpath=notebooks%2F01_Cohomology_and_Asphericity.ipynb)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![SageMath](https://img.shields.io/badge/SageMath-10.7+-blue.svg)](https://www.sagemath.org/)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.20046330.svg)](https://doi.org/10.5281/zenodo.20046330)
 
 SageMath implementation for computing topological invariants of real parabolic arrangement complements, accompanying the paper:
 
@@ -202,6 +203,8 @@ If you use this software in your research, cite both the software release and th
 ### Software citation
 
 Software metadata is provided in `CITATION.cff`.
+
+Zenodo DOI (all versions): 10.5281/zenodo.20046330
 
 ### Paper citation
 
